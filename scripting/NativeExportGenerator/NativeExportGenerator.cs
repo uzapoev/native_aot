@@ -26,22 +26,7 @@ public class NativeExportGenerator : ISourceGenerator
     var cppHeader = new StringBuilder();
     var csBindings = new StringBuilder();
     
-    foreach(var key in context.AnalyzerConfigOptions.GlobalOptions.Keys)
-    {
-      context.AnalyzerConfigOptions.GlobalOptions.TryGetValue(key, out var projeDir);
-      Console.WriteLine($"{key} : {projeDir}");
-    }
-
     context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.targetdir", out var targetdir);
-    context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.projectdir", out var projectdir);
-    //"build_property.targetdir"
-    if (context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projectDir))
-    {
-      cppHeader.AppendLine(projectDir + "hey");
-    }
-    else
-      cppHeader.AppendLine("fuck");
-
 
     cppHeader.AppendLine("// ================================================");
     cppHeader.AppendLine("// NativeAOT Scripting API - Auto Generated");
@@ -93,19 +78,22 @@ public class NativeExportGenerator : ISourceGenerator
       var method = context.Compilation.GetSemanticModel(methodDecl.SyntaxTree).GetDeclaredSymbol(methodDecl) as IMethodSymbol;
       if (method == null) continue;
 
-      string entryPoint = method.Name;
+      var attr = method.GetAttributes().FirstOrDefault(a => a.AttributeClass?.Name == "NativeExportAttribute");
+      if (attr == null)
+        attr = method.GetAttributes().FirstOrDefault(a => a.AttributeClass?.Name == "UnmanagedCallersOnlyAttribute");
+
+      if (attr == null) continue;
+
+      string entryPoint = (string)attr.NamedArguments.FirstOrDefault(na => na.Key == "EntryPoint").Value.Value ?? method.Name;
       string funcName = method.Name;
 
-      cppHeader.AppendLine($"    {GetCppReturnType(method)} (*{funcName}) ({GetCppParameters(method)}) = nullptr;");
+      cppHeader.AppendLine($"    {GetCppReturnType(method)} (*{entryPoint}) ({GetCppParameters(method)}) = nullptr; // {funcName}");
     }
     cppHeader.AppendLine("};");
     cppHeader.AppendLine("#endif");
 
-    //context.AddSource("NativeBindings_Generated.cs", csBindings.ToString());
-    //context.AddSource("scripting_api.h", cppHeader.ToString());
-
-    File.WriteAllText("D:/scripting_api.h", cppHeader.ToString(), Encoding.UTF8);
-    File.WriteAllText("D:/NativeBindings_Generated.cs", csBindings.ToString(), Encoding.UTF8);
+    var headerPath = Path.Combine(targetdir, $"{context.Compilation.AssemblyName}.h");
+    File.WriteAllText(headerPath, cppHeader.ToString(), Encoding.UTF8);
   }
 
   private string GetCppReturnType(IMethodSymbol m) => m.ReturnType.ToDisplayString().Replace("System.", "");
