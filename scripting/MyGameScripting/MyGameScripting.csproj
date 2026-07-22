@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <PublishAot>true</PublishAot>
+    <SelfContained>true</SelfContained>
+    <NativeLib>Shared</NativeLib>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <StripSymbols>true</StripSymbols>
+    <OptimizationPreference>Speed</OptimizationPreference>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+ 
+  <ItemGroup>
+    <CompilerVisibleProperty Include="TargetDir" />
+    <ProjectReference Include="../NativeExportGenerator/NativeExportGenerator.csproj" 
+                      OutputItemType="Analyzer" 
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+ 
+</Project>

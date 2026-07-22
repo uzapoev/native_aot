@@ -1,0 +1,6 @@
+/build
+/scripting/.vs
+/scripting/MyGameScripting/bin
+/scripting/MyGameScripting/obj
+/scripting/NativeExportGenerator/bin
+/scripting/NativeExportGenerator/obj
